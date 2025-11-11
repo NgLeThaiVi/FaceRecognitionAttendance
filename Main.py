@@ -41,17 +41,32 @@ for cl in myList:
 # --- HÀM TÍNH TOÁN VÀ TẢI MÃ HÓA ---
 
 def FindEncoding(images, names):
-    """Tính toán mã hóa nếu file pickle chưa tồn tại, hoặc tải từ file."""
+    """Tính toán mã hóa nếu file pickle chưa tồn tại, hoặc số lượng tên đã biết bị thay đổi, hoặc tải từ file."""
 
+    # Tải dữ liệu từ file nếu tồn tại
     if os.path.exists(ENCODING_FILE):
-        print("TẢI: Đang tải mã hóa từ file .pkl...")
+        print("TẢI: Đang kiểm tra mã hóa từ file .pkl...")
         try:
             with open(ENCODING_FILE, 'rb') as f:
                 data = pickle.load(f)
-                return data['encodeListKnow'], data['classNames']
+
+                # *** LOGIC KIỂM TRA MỚI ***
+                # Kiểm tra xem số lượng tên hiện tại (sau khi load ảnh) có khớp với số lượng tên đã lưu không
+                if len(names) == len(data['classNames']):
+                    # Nếu số lượng khớp, coi như dữ liệu đã đầy đủ và tải lên
+                    print("TẢI: Số lượng khuôn mặt khớp. Tải thành công.")
+                    return data['encodeListKnow'], data['classNames']
+                else:
+                    # Nếu số lượng không khớp (thêm hoặc bớt ảnh), buộc tính toán lại
+                    print(
+                        f"THAY ĐỔI: Số lượng khuôn mặt thay đổi ({len(data['classNames'])} -> {len(names)}). Buộc tính toán lại.")
+                    os.remove(ENCODING_FILE)  # Xóa file cũ để bắt đầu tính toán mới
+                # *** END LOGIC KIỂM TRA MỚI ***
+
         except Exception as e:
             print(f"LỖI: Không thể tải hoặc đọc file {ENCODING_FILE}. Bắt đầu tính toán lại.")
-            os.remove(ENCODING_FILE)
+            if os.path.exists(ENCODING_FILE):
+                os.remove(ENCODING_FILE)  # Xóa nếu lỗi đọc/ghi
 
     print("TÍNH TOÁN: Bắt đầu tính toán mã hóa khuôn mặt mới...")
     encodeList = []
